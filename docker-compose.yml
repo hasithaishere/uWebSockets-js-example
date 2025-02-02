@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  server1:
+    build: ./server
+    container_name: server1
+    environment:
+      - PORT=9000
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+
+  server2:
+    build: ./server
+    container_name: server2
+    environment:
+      - PORT=9000
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - server1
+      - server2

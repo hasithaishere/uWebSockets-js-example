@@ -1,8 +1,23 @@
 import uWS from 'uWebSockets.js';
 import jwt from 'jsonwebtoken';
+import { createClient } from 'redis';
 
 const port = 3000;
 const SECRET_KEY = 'your-secret-key'; // Replace with a secure secret key
+
+// Create Redis clients for publishing and subscribing
+const redisPublisher = createClient({ url: 'redis://redis:6379' });
+const redisSubscriber = createClient({ url: 'redis://redis:6379' });
+
+redisPublisher.on('error', (err) => console.error('Redis Publisher Error:', err));
+redisSubscriber.on('error', (err) => console.error('Redis Subscriber Error:', err));
+
+// Connect to Redis
+(async () => {
+    await redisPublisher.connect();
+    await redisSubscriber.connect();
+    console.log('Connected to Redis');
+})();
 
 // Generate a JWT token
 const generateToken = (username) => {
@@ -92,6 +107,11 @@ const app = uWS.App()
             console.log('New WebSocket connection established');
             console.log('Authenticated user:', ws.user);
 
+            // Subscribe to Redis channel for broadcasting messages
+            redisSubscriber.subscribe('broadcast', (message) => {
+                ws.send(message);
+            });
+
             // Send welcome message to client
             ws.send(JSON.stringify({
                 type: 'connection_success',
@@ -102,11 +122,20 @@ const app = uWS.App()
         message: (ws, message, isBinary) => {
             const msg = Buffer.from(message).toString('utf-8');
             console.log(`Received message from ${ws.user.username}:`, msg);
-            ws.send(`Echo: ${msg}`);
+
+            // Broadcast the message to all clients via Redis
+            redisPublisher.publish('broadcast', JSON.stringify({
+                type: 'message',
+                from: ws.user.username,
+                message: msg
+            }));
         },
 
         close: (ws, code, message) => {
             console.log(`Client ${ws.user?.username || 'unknown'} disconnected`);
+
+            // Unsubscribe from Redis channel when client disconnects
+            redisSubscriber.unsubscribe('broadcast');
         },
     })
     .listen(port, (token) => {

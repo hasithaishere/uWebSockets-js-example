@@ -1,0 +1,15 @@
+{
+    "name": "uws-redis-server",
+    "version": "1.0.0",
+    "type": "module",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.7",
+        "jsonwebtoken": "^9.0.2",
+        "redis": "^4.6.5",
+        "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.30.0"
+    }
+}

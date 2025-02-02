@@ -19,12 +19,12 @@
         // Fetch the JWT token from the server
         async function connectWebSocket() {
             try {
-                const response = await fetch('http://localhost:3000/token');
+                const response = await fetch('http://localhost:8080/token');
                 const data = await response.json();
                 const token = data.token;
 
                 // Connect to the WebSocket server with the token as a query parameter
-                ws = new WebSocket(`ws://localhost:3000?token=${token}`);
+                ws = new WebSocket(`ws://localhost:8080?token=${token}`);
 
                 ws.onopen = () => {
                     console.log('Connected to the WebSocket server');
