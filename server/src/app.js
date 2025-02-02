@@ -8,23 +8,21 @@ const SECRET_KEY = 'your-secret-key'; // Replace with a secure secret key
 // Create Redis clients for publishing and subscribing
 const redisPublisher = createClient({ url: 'redis://redis:6379' });
 const redisSubscriber = createClient({ url: 'redis://redis:6379' });
+const redisClient = createClient({ url: 'redis://redis:6379' });
 
 redisPublisher.on('error', (err) => console.error('Redis Publisher Error:', err));
 redisSubscriber.on('error', (err) => console.error('Redis Subscriber Error:', err));
+redisClient.on('error', (err) => console.error('Redis Client Error:', err));
 
-// Connect to Redis
 (async () => {
     await redisPublisher.connect();
     await redisSubscriber.connect();
+    await redisClient.connect();
     console.log('Connected to Redis');
 })();
 
-// Generate a JWT token
-const generateToken = (username) => {
-    return jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
-};
+const generateToken = (username) => jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
 
-// Helper function to validate JWT token
 function validateToken(token) {
     try {
         const decoded = jwt.verify(token, SECRET_KEY);
@@ -93,7 +91,7 @@ const app = uWS.App()
             }
 
             res.upgrade(
-                { token, user: validationResult.user }, // Data to pass to websocket
+                { token, user: validationResult.user },
                 req.getHeader('sec-websocket-key'),
                 req.getHeader('sec-websocket-protocol'),
                 req.getHeader('sec-websocket-extensions'),
@@ -102,40 +100,54 @@ const app = uWS.App()
         },
 
         open: (ws) => {
-            console.log('A client connected');
-
+            ws.connectionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             console.log('New WebSocket connection established');
             console.log('Authenticated user:', ws.user);
 
-            // Subscribe to Redis channel for broadcasting messages
-            redisSubscriber.subscribe('broadcast', (message) => {
-                ws.send(message);
-            });
-
-            // Send welcome message to client
             ws.send(JSON.stringify({
                 type: 'connection_success',
                 message: `Welcome ${ws.user.username}!`
             }));
         },
 
-        message: (ws, message, isBinary) => {
+        message: async (ws, message, isBinary) => {
             const msg = Buffer.from(message).toString('utf-8');
             console.log(`Received message from ${ws.user.username}:`, msg);
+            
+            try {
+                const parsedMessage = JSON.parse(msg);
+                if (parsedMessage.action === 'listen' && parsedMessage.channel) {
+                    const channelKey = `channel:${parsedMessage.channel}`;
+                    const timestamp = Date.now();
 
-            // Broadcast the message to all clients via Redis
-            redisPublisher.publish('broadcast', JSON.stringify({
-                type: 'message',
-                from: ws.user.username,
-                message: msg
-            }));
+                    console.log('....>>', ws.connectionId)
+                    
+                    await redisClient.hSet(channelKey, ws.connectionId, timestamp);
+                    ws.channel = parsedMessage.channel;
+
+                    console.log(`Subscribed ${ws.user.username} to ${parsedMessage.channel}`);
+                    ws.send(JSON.stringify({ type: 'subscribed', channel: parsedMessage.channel }));
+                    return;
+                } else {
+                    // Broadcast non-listen actions
+                    redisPublisher.publish('broadcast', JSON.stringify({
+                        type: 'message',
+                        from: ws.user.username,
+                        action: parsedMessage.action,
+                        data: parsedMessage
+                    }));
+                }
+            } catch (err) {
+                console.error('Error processing message:', err);
+            }
         },
 
-        close: (ws, code, message) => {
+        close: async (ws, code, message) => {
             console.log(`Client ${ws.user?.username || 'unknown'} disconnected`);
-
-            // Unsubscribe from Redis channel when client disconnects
-            redisSubscriber.unsubscribe('broadcast');
+            if (ws.channel) {
+                const channelKey = `channel:${ws.channel}`;
+                await redisClient.hDel(channelKey, ws.connectionId);
+            }
         },
     })
     .listen(port, (token) => {
