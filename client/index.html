@@ -1,22 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket Client with JWT</title>
 </head>
-
 <body>
     <h1>WebSocket Client with JWT</h1>
-    <input type="text" id="messageInput" placeholder="Type a message">
-    <button onclick="sendMessage()">Send</button>
+    <div id="status">Connection Status: Disconnected</div>
+    <div id="currentChannel">Current Channel: None</div>
     <ul id="messages"></ul>
 
     <script>
         let ws;
+        let currentChannelNumber = null;
 
-        // Fetch the JWT token from the server
+        function generateRandomNumber() {
+            return Math.floor(Math.random() * 1000000);
+        }
+
+        function addMessage(message, type = 'info') {
+            const messages = document.getElementById('messages');
+            const messageItem = document.createElement('li');
+            messageItem.textContent = typeof message === 'string' ? message : JSON.stringify(message);
+            messageItem.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+            messages.appendChild(messageItem);
+        }
+
+        function updateStatus(status) {
+            document.getElementById('status').textContent = `Connection Status: ${status}`;
+        }
+
+        function updateChannelDisplay(channel) {
+            document.getElementById('currentChannel').textContent = `Current Channel: ${channel || 'None'}`;
+        }
+
+        function subscribeToChannel() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                currentChannelNumber = generateRandomNumber();
+                const channel = `private-event.${currentChannelNumber}`;
+                const subscribeMessage = {
+                    action: "listen",
+                    channel: channel
+                };
+                
+                ws.send(JSON.stringify(subscribeMessage));
+                addMessage(`Subscribing to ${channel}`);
+                updateChannelDisplay(channel);
+
+                // Schedule unsubscribe after 15 seconds
+                setTimeout(() => {
+                    if (currentChannelNumber !== null) {
+                        const unsubscribeMessage = {
+                            action: "unsubscribe",
+                            channel: `private-event.${currentChannelNumber}`
+                        };
+                        ws.send(JSON.stringify(unsubscribeMessage));
+                        addMessage(`Unsubscribing from private-event.${currentChannelNumber}`);
+                        currentChannelNumber = null;
+                        updateChannelDisplay('None');
+                    }
+                }, 30000);
+            }
+        }
+
         async function connectWebSocket() {
             try {
                 const response = await fetch('http://localhost:8080/token');
@@ -27,38 +74,37 @@
                 ws = new WebSocket(`ws://localhost:8080?token=${token}`);
 
                 ws.onopen = () => {
-                    console.log('Connected to the WebSocket server');
+                    updateStatus('Connected');
+                    addMessage('Connected to WebSocket server', 'success');
+                    // Start the subscription process when connected
+                    subscribeToChannel();
                 };
 
                 ws.onmessage = (event) => {
-                    const messages = document.getElementById('messages');
-                    const messageItem = document.createElement('li');
-                    messageItem.textContent = event.data;
-                    messages.appendChild(messageItem);
+                    const data = JSON.parse(event.data);
+                    addMessage(data);
                 };
 
                 ws.onclose = () => {
-                    console.log('Disconnected from the WebSocket server');
+                    updateStatus('Disconnected');
+                    addMessage('Disconnected from WebSocket server', 'error');
+                    // Attempt to reconnect after 5 seconds
+                    setTimeout(connectWebSocket, 5000);
+                };
+
+                ws.onerror = (error) => {
+                    updateStatus('Error');
+                    addMessage('WebSocket error: ' + error.message, 'error');
                 };
             } catch (error) {
-                console.error('Error fetching token:', error);
+                addMessage('Error fetching token: ' + error.message, 'error');
+                // Attempt to reconnect after 5 seconds
+                setTimeout(connectWebSocket, 5000);
             }
         }
 
-        function sendMessage() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                const input = document.getElementById('messageInput');
-                const message = input.value;
-                ws.send(message);
-                input.value = '';
-            } else {
-                console.error('WebSocket is not connected');
-            }
-        }
-
-        // Connect to the WebSocket when the page loads
+        // Connect when the page loads
         connectWebSocket();
     </script>
 </body>
-
 </html>
