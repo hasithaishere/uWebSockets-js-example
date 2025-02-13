@@ -175,6 +175,10 @@ const app = uWS.App()
             connections.delete(ws.connectionId);
             ws.currentChannels = null;
         },
+
+        drain: (ws) => {
+            console.log('WebSocket backpressure: ' + ws.getBufferedAmount(), ws.connectionId);
+        }
     })
     .listen(port, (listenSocket) => {
         if (listenSocket) {
