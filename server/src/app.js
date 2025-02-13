@@ -37,6 +37,14 @@ const app = uWS.App()
         res.writeHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
         res.end();
     })
+    // Health check endpoint
+    .get('/health', (res, req) => {
+        res.writeHeader('Content-Type', 'application/json');
+        res.writeHeader('Access-Control-Allow-Origin', '*');
+        res.writeHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.writeHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.end(JSON.stringify({ status: 'healthy' }));
+    })
     // Authentication endpoint
     .post('/api/auth/token', (res, req) => {
         res.writeHeader('Access-Control-Allow-Origin', '*');
