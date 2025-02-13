@@ -6,24 +6,30 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    networks:
+      - socket_network
 
   server1:
     build: ./server
     container_name: server1
     environment:
-      - PORT=9000
+      - PORT=3000
       - REDIS_HOST=redis
     depends_on:
       - redis
+    networks:
+      - socket_network
 
   server2:
     build: ./server
     container_name: server2
     environment:
-      - PORT=9000
+      - PORT=3000
       - REDIS_HOST=redis
     depends_on:
       - redis
+    networks:
+      - socket_network
 
   nginx:
     image: nginx:latest
@@ -35,3 +41,9 @@ services:
     depends_on:
       - server1
       - server2
+    networks:
+      - socket_network
+
+networks:
+  socket_network:
+    driver: bridge
