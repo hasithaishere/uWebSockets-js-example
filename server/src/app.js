@@ -1,19 +1,9 @@
 import uWS from 'uWebSockets.js';
 import jwt from 'jsonwebtoken';
-import { createClient } from 'redis';
 import { v4 as uuidv4 } from 'uuid';
 
 const port = parseInt(process.env.PORT) || 3000; // Parse port as integer
 const SECRET_KEY = 'your-secret-key';
-
-const redisClient = createClient({ url: 'redis://redis:6379' });
-
-redisClient.on('error', (err) => console.error('Redis Error:', err));
-
-(async () => {
-    await redisClient.connect();
-    console.log('Connected to Redis');
-})();
 
 const generateToken = (username) => {
     return jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
@@ -29,6 +19,7 @@ function validateToken(token) {
 }
 
 const connections = new Map();
+const channelConnections = new Map();
 
 const handleArrayBuffer = (message) => {
     if (message instanceof ArrayBuffer) {
@@ -75,86 +66,8 @@ const app = uWS.App()
         res.write("Great knowing you");
         res.writeStatus("200OK");
         res.end();
-
-        // res.writeHeader('Access-Control-Allow-Origin', '*');
-        // res.writeHeader('Content-Type', 'application/json');
-
-        // let buffer = '';
-
-        // res.onData((chunk, isLast) => {
-        //     buffer += chunk;
-        //     if (isLast) {
-        //         try {
-        //             const message = JSON.parse(buffer);
-        //             const { connectionId, channelId, data } = message;
-
-        //             if (!connectionId || !channelId || !data) {
-        //                 res.writeStatus('400').end(JSON.stringify({
-        //                     error: 'Missing required fields: connectionId, channelId, or data'
-        //                 }));
-        //                 return;
-        //             }
-
-        //             // // Check if the connection exists and is subscribed to the channel
-        //             // redisClient.hGet(`channel:${channelId}`, connectionId)
-        //             //     .then(timestamp => {
-        //             //         if (!timestamp) {
-        //             //             res.writeStatus('404').end(JSON.stringify({
-        //             //                 error: 'Connection not found or not subscribed to the channel'
-        //             //             }));
-        //             //             return;
-        //             //         }
-
-        //             //         const ws = connections.get(connectionId);
-        //             //         if (!ws) {
-        //             //             res.writeStatus('404').end(JSON.stringify({
-        //             //                 error: 'Connection not found'
-        //             //             }));
-        //             //             return;
-        //             //         }
-
-        //             //         ws.send(JSON.stringify({
-        //             //             type: 'channel_message',
-        //             //             channelId,
-        //             //             data,
-        //             //             timestamp: Date.now()
-        //             //         }));
-
-        //             //         res.end(JSON.stringify({
-        //             //             success: true,
-        //             //             message: 'Message sent successfully'
-        //             //         }));
-        //             //     })
-        //             //     .catch(err => {
-        //             //         console.error('Redis error:', err);
-        //             //         res.writeStatus('500').end(JSON.stringify({
-        //             //             error: 'Internal server error'
-        //             //         }));
-        //             //     });
-
-        //             res.end(JSON.stringify({ token }));
-
-        //         } catch (err) {
-        //             res.writeStatus('400').end(JSON.stringify({
-        //                 error: 'Invalid JSON payload'
-        //             }));
-        //         }
-        //     }
-        // });
     })
-    // Channel management endpoints
-    .post('/api/channels/subscribe', (res, req) => {
-        // Implementation for channel subscription
-        res.writeHeader('Access-Control-Allow-Origin', '*');
-        res.writeHeader('Content-Type', 'application/json');
-        // Add implementation here
-    })
-    .post('/api/channels/unsubscribe', (res, req) => {
-        // Implementation for channel unsubscription
-        res.writeHeader('Access-Control-Allow-Origin', '*');
-        res.writeHeader('Content-Type', 'application/json');
-        // Add implementation here
-    })
+
     // WebSocket endpoint under /api/ws
     .ws('/api/ws', {
         compression: uWS.SHARED_COMPRESSOR,
@@ -183,7 +96,6 @@ const app = uWS.App()
             res.upgrade(
                 {
                     connectionId,
-                    token,
                     user: validationResult.user,
                     currentChannels: new Set()
                 },
@@ -214,12 +126,14 @@ const app = uWS.App()
 
                 if (action === 'listen' && channel) {
                     const timestamp = Date.now();
-
-                    await redisClient.hSet(`channel:${channel}`, ws.connectionId, timestamp.toString());
-                    await redisClient.sAdd(`conn:${ws.connectionId}`, channel);
                     ws.currentChannels.add(channel);
+                    if (!channelConnections.has(channel)) {
+                        channelConnections.set(channel, new Set([ws.connectionId]));
+                    } else {
+                        channelConnections.get(channel).add(ws.connectionId);
+                    }
 
-                    console.log(`Connection ${ws.connectionId} subscribed to channel ${channel}`);
+                    console.log(`Connection ${ws.connectionId} subscribed to channel ${channel}`, channelConnections.get(channel));
 
                     ws.send(JSON.stringify({
                         type: 'subscription_success',
@@ -229,11 +143,13 @@ const app = uWS.App()
                     }));
 
                 } else if (action === 'unsubscribe' && channel) {
-                    await redisClient.hDel(`channel:${channel}`, ws.connectionId);
-                    await redisClient.sRem(`conn:${ws.connectionId}`, channel);
                     ws.currentChannels.delete(channel);
 
-                    console.log(`Connection ${ws.connectionId} unsubscribed from channel ${channel}`);
+                    if (channelConnections.has(channel)) {
+                        channelConnections.get(channel).delete(ws.connectionId);
+                    }
+
+                    console.log(`Connection ${ws.connectionId} unsubscribed from channel ${channel}`, channelConnections.get(channel));
 
                     ws.send(JSON.stringify({
                         type: 'unsubscribe_success',
@@ -256,23 +172,8 @@ const app = uWS.App()
 
         close: async (ws, code, message) => {
             console.log(`Connection ${ws.connectionId} closed`);
-
-            try {
-                connections.delete(ws.connectionId);
-
-                const channels = await redisClient.sMembers(`conn:${ws.connectionId}`);
-
-                for (const channel of channels) {
-                    await redisClient.hDel(`channel:${channel}`, ws.connectionId);
-                    console.log(`Removed connection ${ws.connectionId} from channel:${channel} HSET`);
-                }
-
-                await redisClient.del(`conn:${ws.connectionId}`);
-                console.log(`Removed connection SET conn:${ws.connectionId}`);
-
-            } catch (err) {
-                console.error('Error cleaning up Redis mappings:', err);
-            }
+            connections.delete(ws.connectionId);
+            ws.currentChannels = null;
         },
     })
     .listen(port, (listenSocket) => {
