@@ -84,6 +84,9 @@ const app = uWS.App()
 
         upgrade: (res, req, context) => {
             const queryString = `?${req.getQuery()}`;
+
+            console.log('WebSocket upgrade request received', queryString);
+
             const searchParams = new URLSearchParams(queryString);
             const token = searchParams.get('token');
 
