@@ -173,12 +173,19 @@ const app = uWS.App()
         close: async (ws, code, message) => {
             console.log(`Connection ${ws.connectionId} closed`);
             connections.delete(ws.connectionId);
+            ws.currentChannels.forEach(channel => {
+                if (channelConnections.has(channel)) {
+                    channelConnections.get(channel).delete(ws.connectionId);
+                }
+            });
             ws.currentChannels = null;
         },
 
         drain: (ws) => {
             console.log('WebSocket backpressure: ' + ws.getBufferedAmount(), ws.connectionId);
-        }
+        },
+
+        
     })
     .listen(port, (listenSocket) => {
         if (listenSocket) {
