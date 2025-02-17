@@ -33,8 +33,6 @@ function validateToken(token) {
 
 const connections = new Map();
 
-const setHeader = (res, name, value) => (res.headers ??= []).push(name, value);
-
 const handleArrayBuffer = (message) => {
     if (message instanceof ArrayBuffer) {
         const decoder = new TextDecoder();
@@ -116,7 +114,7 @@ const app = uWS.App()
 
             const { session_id: sessionId } = jwt.verify(token, SECRET_KEY);
 
-            setHeader(res, 'Set-Cookie', `CSOCKSID=${sessionId}`);
+            res.writeHeader('Set-Cookie', `CSOCKSID=${sessionId}; SameSite=None; HttpOnly`);
 
             res.upgrade(
                 {
