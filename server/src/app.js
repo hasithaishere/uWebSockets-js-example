@@ -48,10 +48,18 @@ app.get('/', (req, res) => {
 })
 
 
+app.post('/api/messages/send', (req, res) => {
+    console.log("message received", req.body)
+    const { connectionId, data } = req.body;
+
+    io.to(connectionId).emit("message", data)
+    res.json({})
+})
+
 io.on('connection', (socket) => {
 
     setTimeout(_ => {
-        socket.emit("server-info", server_info)
+        socket.emit("server-info", server_info, socket.id)
     }, 3000)
     console.log("new connection", socket.id);
 });
