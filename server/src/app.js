@@ -64,6 +64,10 @@ const app = uWS.App()
 
         const username = 'john_doe'; // In real app, this would come from request body
         const token = generateToken(username);
+
+        const { session_id: sessionId } = jwt.verify(token, SECRET_KEY);
+
+        res.writeHeader('Set-Cookie', `CSOCKSID=${sessionId}; SameSite=None; HttpOnly`);
         res.end(JSON.stringify({ token }));
     })
     // Message sending endpoint
