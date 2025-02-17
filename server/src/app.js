@@ -1,42 +1,61 @@
-const express = require('express')
-const app = express()
-const port = 3000
-const { v4: uuidv4 } = require("uuid");
+// server.js
+const WebSocket = require('ws');
+const http = require('http');
+const { v4: uuidv4 } = require('uuid');
+const cookie = require('cookie');
 
-// Generate a UUID v4
 const uuid = uuidv4();
 
-app.get('/set-cookie', (req, res) => {
+const server = http.createServer((req, res) => {
+    // Health check endpoint
+    if (req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            connections: wss.clients.size
+        }));
+        return;
+    }
 
-    const name = req.query.name
-    const value = req.query.value
+    // Default response for other routes
+    res.writeHead(200);
+    res.end('WebSocket server is running');
+});
 
-    res.cookie(name, value)
-    res.send({
-        "command": "set-cookie",
-        "cookies": {
-            [name]: value
-        }
-    })
-})
+const wss = new WebSocket.Server({ 
+    server,
+    verifyClient: (info, cb) => {
+        // Generate UUID for new connections
+        
+        info.req.uuid = uuid;
 
-app.get('/server-info', (req, res) => {
-    res.send({
-        server_id: uuid
-    })
-})
+        // Set cookie in the upgrade response
+        info.req.headers['set-cookie'] = cookie.serialize('CSOCKSID', uuid, {
+            httpOnly: true,
+            path: '/'
+        });
 
-app.get('/', (req, res) => {
-    res.send('Hello World!')
-})
+        cb(true);
+    }
+});
 
-app.get('/health', (req, res) => {
-    res.status(200).json({
-        status: 'healthy',
-        timestamp: new Date().toISOString()
+wss.on('connection', (ws, req) => {
+    const uuid = req.uuid;
+    console.log(`New client connected with UUID: ${uuid}`);
+
+    ws.on('message', (message) => {
+        console.log(`Received message from ${uuid}: ${message}`);
+        // Echo the message back
+        ws.send(`Server received: ${message}`);
+    });
+
+    ws.on('close', () => {
+        console.log(`Client ${uuid} disconnected`);
     });
 });
 
-app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-})
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`${uuid} || Server is running on port ${PORT}`);
+});ƒ
