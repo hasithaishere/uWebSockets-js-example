@@ -4,9 +4,11 @@ const http = require('http')
 const server = http.createServer(app)
 const { Server } = require("socket.io")
 const io = new Server(server)
+const bodyParser = require('body-parser')
 
 app.use(express.static('public'))
 
+app.use(bodyParser.json())
 
 const port = 3000
 const { v4: uuidv4 } = require("uuid")
