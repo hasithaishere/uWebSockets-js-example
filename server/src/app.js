@@ -1,61 +1,61 @@
-// server.js
-const WebSocket = require('ws');
-const http = require('http');
-const { v4: uuidv4 } = require('uuid');
-const cookie = require('cookie');
+const express = require('express')
+const app = express()
+const http = require('http')
+const server = http.createServer(app)
+const { Server } = require("socket.io")
+const io = new Server(server)
 
+app.use(express.static('public'))
+
+
+const port = 3000
+const { v4: uuidv4 } = require("uuid")
+
+// Generate a UUID v4
 const uuid = uuidv4();
 
-const server = http.createServer((req, res) => {
-    // Health check endpoint
-    if (req.url === '/health') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-            status: 'healthy',
-            timestamp: new Date().toISOString(),
-            connections: wss.clients.size
-        }));
-        return;
-    }
+const server_info = {
+    server_id: uuid
+}
 
-    // Default response for other routes
-    res.writeHead(200);
-    res.end('WebSocket server is running');
-});
+app.get('/set-cookie', (req, res) => {
 
-const wss = new WebSocket.Server({ 
-    server,
-    verifyClient: (info, cb) => {
-        // Generate UUID for new connections
-        
-        info.req.uuid = uuid;
+    const name = req.query.name
+    const value = req.query.value
 
-        // Set cookie in the upgrade response
-        info.req.headers['set-cookie'] = cookie.serialize('CSOCKSID', uuid, {
-            httpOnly: true,
-            path: '/'
-        });
+    res.cookie(name, value)
+    res.send({
+        "command": "set-cookie",
+        "cookies": {
+            [name]: value
+        }
+    })
+})
 
-        cb(true);
-    }
-});
-
-wss.on('connection', (ws, req) => {
-    const uuid = req.uuid;
-    console.log(`New client connected with UUID: ${uuid}`);
-
-    ws.on('message', (message) => {
-        console.log(`Received message from ${uuid}: ${message}`);
-        // Echo the message back
-        ws.send(`Server received: ${message}`);
-    });
-
-    ws.on('close', () => {
-        console.log(`Client ${uuid} disconnected`);
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'healthy',
+        timestamp: new Date().toISOString()
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`${uuid} || Server is running on port ${PORT}`);
-});ƒ
+app.get('/server-info', (req, res) => {
+    res.send(server_info)
+})
+
+app.get('/', (req, res) => {
+    res.sendFile('index.html')
+})
+
+
+io.on('connection', (socket) => {
+
+    setTimeout(_ => {
+        socket.emit("server-info", server_info)
+    }, 3000)
+    console.log("new connection", socket.id);
+});
+
+server.listen(port, () => {
+    console.log(`Example app listening on port ${port}`)
+})
