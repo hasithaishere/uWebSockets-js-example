@@ -11,6 +11,8 @@ RUN npm install
 # Copy the server code
 COPY src/ ./src/
 
+COPY .env ./.env
+
 # Expose the server port
 EXPOSE 3000
 

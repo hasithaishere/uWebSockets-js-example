@@ -1,12 +1,25 @@
 import uWS from 'uWebSockets.js';
 import jwt from 'jsonwebtoken';
+import { createClient } from 'redis';
 import { v4 as uuidv4 } from 'uuid';
+
+import dotenv from 'dotenv'
+dotenv.config();
 
 const port = parseInt(process.env.PORT) || 3000; // Parse port as integer
 const SECRET_KEY = 'your-secret-key';
 
+const redisClient = createClient({ url: process.env.REDIS_URL });
+
+redisClient.on('error', (err) => console.error('Redis Error:', err));
+
+(async () => {
+    await redisClient.connect();
+    console.log('Connected to Redis');
+})();
+
 const generateToken = (username) => {
-    return jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
+    return jwt.sign({ username, session_id: uuidv4() }, SECRET_KEY, { expiresIn: '1h' });
 };
 
 function validateToken(token) {
@@ -19,7 +32,6 @@ function validateToken(token) {
 }
 
 const connections = new Map();
-const channelConnections = new Map();
 
 const handleArrayBuffer = (message) => {
     if (message instanceof ArrayBuffer) {
@@ -58,7 +70,7 @@ const app = uWS.App()
     .post('/api/messages/send', (res, req) => {
         res.onData(async (dataBuffer) => {
             const stringed = handleArrayBuffer(dataBuffer);
-            
+
             const { connectionId, channelId, data } = JSON.parse(stringed);
 
             const ws = connections.get(connectionId);
@@ -68,14 +80,13 @@ const app = uWS.App()
                     channelId,
                     data,
                     timestamp: Date.now()
-                }));   
+                }));
             }
         });
         res.write("Great knowing you");
         res.writeStatus("200OK");
         res.end();
     })
-
     // WebSocket endpoint under /api/ws
     .ws('/api/ws', {
         compression: uWS.SHARED_COMPRESSOR,
@@ -84,9 +95,6 @@ const app = uWS.App()
 
         upgrade: (res, req, context) => {
             const queryString = `?${req.getQuery()}`;
-
-            console.log('WebSocket upgrade request received', queryString);
-
             const searchParams = new URLSearchParams(queryString);
             const token = searchParams.get('token');
 
@@ -107,6 +115,7 @@ const app = uWS.App()
             res.upgrade(
                 {
                     connectionId,
+                    token,
                     user: validationResult.user,
                     currentChannels: new Set()
                 },
@@ -133,18 +142,18 @@ const app = uWS.App()
             console.log(`Received message from connection ${ws.connectionId}:`, msg);
 
             try {
-                const { action, channel } = JSON.parse(msg);
+                const { action, channel, token } = JSON.parse(msg);
 
                 if (action === 'listen' && channel) {
                     const timestamp = Date.now();
-                    ws.currentChannels.add(channel);
-                    if (!channelConnections.has(channel)) {
-                        channelConnections.set(channel, new Set([ws.connectionId]));
-                    } else {
-                        channelConnections.get(channel).add(ws.connectionId);
-                    }
 
-                    console.log(`Connection ${ws.connectionId} subscribed to channel ${channel}`, channelConnections.get(channel));
+                    const { session_id: sessionId } = jwt.verify(token, SECRET_KEY);
+
+                    await redisClient.hSet(`channel:${channel}`, ws.connectionId, sessionId);
+                    await redisClient.sAdd(`conn:${ws.connectionId}`, channel);
+                    ws.currentChannels.add(channel);
+
+                    console.log(`Connection ${ws.connectionId} subscribed to channel ${channel}`);
 
                     ws.send(JSON.stringify({
                         type: 'subscription_success',
@@ -154,13 +163,11 @@ const app = uWS.App()
                     }));
 
                 } else if (action === 'unsubscribe' && channel) {
+                    await redisClient.hDel(`channel:${channel}`, ws.connectionId);
+                    await redisClient.sRem(`conn:${ws.connectionId}`, channel);
                     ws.currentChannels.delete(channel);
 
-                    if (channelConnections.has(channel)) {
-                        channelConnections.get(channel).delete(ws.connectionId);
-                    }
-
-                    console.log(`Connection ${ws.connectionId} unsubscribed from channel ${channel}`, channelConnections.get(channel));
+                    console.log(`Connection ${ws.connectionId} unsubscribed from channel ${channel}`);
 
                     ws.send(JSON.stringify({
                         type: 'unsubscribe_success',
@@ -183,20 +190,24 @@ const app = uWS.App()
 
         close: async (ws, code, message) => {
             console.log(`Connection ${ws.connectionId} closed`);
-            connections.delete(ws.connectionId);
-            ws.currentChannels.forEach(channel => {
-                if (channelConnections.has(channel)) {
-                    channelConnections.get(channel).delete(ws.connectionId);
+
+            try {
+                connections.delete(ws.connectionId);
+
+                const channels = await redisClient.sMembers(`conn:${ws.connectionId}`);
+
+                for (const channel of channels) {
+                    await redisClient.hDel(`channel:${channel}`, ws.connectionId);
+                    console.log(`Removed connection ${ws.connectionId} from channel:${channel} HSET`);
                 }
-            });
-            ws.currentChannels = null;
-        },
 
-        drain: (ws) => {
-            console.log('WebSocket backpressure: ' + ws.getBufferedAmount(), ws.connectionId);
-        },
+                await redisClient.del(`conn:${ws.connectionId}`);
+                console.log(`Removed connection SET conn:${ws.connectionId}`);
 
-        
+            } catch (err) {
+                console.error('Error cleaning up Redis mappings:', err);
+            }
+        },
     })
     .listen(port, (listenSocket) => {
         if (listenSocket) {
