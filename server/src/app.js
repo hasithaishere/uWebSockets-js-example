@@ -10,7 +10,7 @@ const axios = require('axios');
 // Constants
 const PORT = 3000;
 const CALB_COOKIE = 'CALBCOOK';
-const EC2_METADATA_URL = process.env.EC2_METADATA_URL || 'http://169.254.169.254/latest/meta-data/local-ipv4';
+const EC2_METADATA_URL = 'http://169.254.169.254/latest/meta-data/local-ipv4';
 
 // Function to get Machine IP from EC2 Metadata
 async function getMachineIP() {
