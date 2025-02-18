@@ -51,6 +51,17 @@ const app = uWS.App()
     })
     // Health check endpoint
     .get('/health', (res, req) => {
+        // Log all request headers
+        console.log('Request Headers:');
+        req.forEach((key, value) => {
+            console.log(`${key}: ${value}`);
+        });
+
+        // Specifically log cookies if present
+        const cookies = req.getHeader('cookie');
+        if (cookies) {
+            console.log('Cookies:', cookies);
+        }
         res.writeHeader('Content-Type', 'application/json');
         res.writeHeader('Access-Control-Allow-Origin', '*');
         res.writeHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
