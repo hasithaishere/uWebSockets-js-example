@@ -1,13 +1,78 @@
+// Updated index.html file for WebSocket Client with Session Initialization, Auto-Ping, and Message Display
+// Place this file in the 'public' folder
+
+<!DOCTYPE html>
 <html>
+
 <head>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        var socket = io()
-    </script>
+    <title>WebSocket Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #output {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 200px;
+            overflow-y: scroll;
+        }
+    </style>
 </head>
 
 <body>
-<h1>Hi</h1>
+    <h1>WebSocket Client</h1>
+    <button onclick="connectWebSocket()">Connect</button>
+    <div id="output"></div>
+
+    <script>
+        let socket;
+
+        function generateRandomHash() {
+            return Array.from({ length: 32 }, () => Math.random().toString(36).charAt(2)).join('');
+        }
+
+        async function setSession() {
+            const sessionValue = generateRandomHash();
+            const response = await fetch(`/socket/set-session/${sessionValue}`, { credentials: 'include' });
+            const result = await response.json();
+            logMessage(`Session set: ${result.sessionValue}`);
+        }
+
+        async function connectWebSocket() {
+            await setSession();
+
+            socket = new WebSocket(`ws://${window.location.host}`);
+
+            socket.onopen = () => {
+                logMessage('WebSocket Connected');
+                startPing();
+            };
+
+            socket.onmessage = (event) => {
+                logMessage(`Received: ${event.data}`);
+            };
+
+            socket.onclose = () => {
+                logMessage('WebSocket Disconnected');
+            };
+        }
+
+        function startPing() {
+            setInterval(() => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send('ping');
+                    logMessage('Sent: ping');
+                }
+            }, 15000);
+        }
+
+        function logMessage(message) {
+            const output = document.getElementById('output');
+            output.innerHTML += message + '<br>';
+            output.scrollTop = output.scrollHeight;
+        }
+    </script>
 </body>
 
 </html>
