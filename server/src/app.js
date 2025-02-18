@@ -98,6 +98,8 @@ const wss = new WebSocket.Server({
           maxAge: 86400, // 24 hours
           sameSite: 'strict'
         });
+
+        console.log(`Generated new session ID: ${stickySession}`, cookie.parse(cookieHeader), cookieHeader);
         
         info.req.headers.cookie = cookieHeader;
       }
