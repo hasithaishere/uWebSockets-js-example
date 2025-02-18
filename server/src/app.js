@@ -5,6 +5,8 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 
 const app = express();
+app.use(express.static('public'))
+
 app.use(express.json()); // Enable JSON parsing for POST requests
 app.use(cookieParser());
 app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
@@ -24,6 +26,10 @@ app.post('/send-message', (req, res) => {
         res.status(404).json({ error: 'Client not found' });
     }
 });
+
+app.get('/', (req, res) => {
+    res.sendFile('index.html')
+})
 
 
 let clients = {}; // Store clients based on session ID
