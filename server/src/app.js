@@ -44,6 +44,7 @@ server.on('upgrade', (req, socket, head) => {
     //console.log('cookies>>>', cookies)
     //const sessionId = cookies ? cookies.split('session_id=')[1]?.split(';')[0] : `session_${Math.random().toString(36).substring(2, 15)}`;
     //console.log(`Session ID: ${sessionId}`);
+    console.log('clients>>>', clients)
     wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, Object.keys(clients)[0]);
     });
