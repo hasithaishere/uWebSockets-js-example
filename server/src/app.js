@@ -104,8 +104,9 @@ server.on('upgrade', (req, socket, head) => {
 });
 
 wss.on("headers", function(headers) {
-    headers["set-cookie"] = CALB_COOKIE + "=" + instanceHash;
-    console.log("handshake response cookie", headers["set-cookie"]);
+    //headers["set-cookie"] = CALB_COOKIE + "=" + instanceHash;
+    headers.push('Set-Cookie: ' + cookieParser.serialize(CALB_COOKIE, instanceHash));
+    console.log("handshake response cookie", headers);
 });
 
 // WebSocket Connection Handling with Ping-Pong
