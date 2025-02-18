@@ -37,6 +37,7 @@
             const response = await fetch(`/set-cookie?value=${sessionValue}`, { credentials: 'include' });
             const result = await response.json();
             logMessage(`Session set: ${result.sessionValue}`);
+            return result;
         }
 
         async function connectWebSocket() {
