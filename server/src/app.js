@@ -37,12 +37,12 @@ getMachineIP().then(ip => {
 
 const app = express();
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'))
 
 // Serve HTML from Public Folder
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+    res.sendFile('index.html')
+})
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ noServer: true });
