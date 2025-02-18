@@ -6,15 +6,6 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
-// CORS Middleware
-const cors = require('cors');
-
-// Configure CORS
-const corsOptions = {
-    origin: '*', // Allow all origins
-    methods: '*', // Allow all methods
-    allowedHeaders: '*'
-};
 
 // Constants
 const PORT = 3000;
@@ -45,8 +36,6 @@ getMachineIP().then(ip => {
 });
 
 const app = express();
-
-app.use(cors(corsOptions));
 
 // Body Parser Middleware
 app.use(express.json());
