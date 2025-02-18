@@ -29,6 +29,8 @@ app.post('/send-message', (req, res) => {
 app.get('/set-cookie', (req, res) => {
     let sessionId = req.cookies.session_id || `session_${Math.random().toString(36).substring(2, 15)}`;
     res.cookie('session_id', sessionId);
+    clients = {};
+    clients[sessionId] = null;
     res.json({ sessionId });
 });
 
@@ -43,7 +45,7 @@ server.on('upgrade', (req, socket, head) => {
     //const sessionId = cookies ? cookies.split('session_id=')[1]?.split(';')[0] : `session_${Math.random().toString(36).substring(2, 15)}`;
     //console.log(`Session ID: ${sessionId}`);
     wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit('connection', ws, sessionId);
+        wss.emit('connection', ws, Object.keys(clients)[0]);
     });
 });
 
