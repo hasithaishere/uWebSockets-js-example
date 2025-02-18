@@ -39,6 +39,7 @@ let clients = {}; // Store clients based on session ID
 // WebSocket upgrade handler
 server.on('upgrade', (req, socket, head) => {
     const cookies = req.headers.cookie;
+    console.log('cookies>>>', cookies)
     const sessionId = cookies ? cookies.split('session_id=')[1]?.split(';')[0] : `session_${Math.random().toString(36).substring(2, 15)}`;
     console.log(`Session ID: ${sessionId}`);
     wss.handleUpgrade(req, socket, head, (ws) => {
