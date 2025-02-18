@@ -7,7 +7,7 @@ const cors = require('cors');
 const app = express();
 app.use(express.json()); // Enable JSON parsing for POST requests
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
