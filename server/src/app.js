@@ -25,6 +25,9 @@ app.post('/send-message', (req, res) => {
     }
 });
 
+
+let clients = {}; // Store clients based on session ID
+
 // Route to set session cookie
 app.get('/set-cookie', (req, res) => {
     let sessionId = req.cookies.session_id || `session_${Math.random().toString(36).substring(2, 15)}`;
@@ -36,7 +39,6 @@ app.get('/set-cookie', (req, res) => {
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ noServer: true });
-let clients = {}; // Store clients based on session ID
 
 // WebSocket upgrade handler
 server.on('upgrade', (req, socket, head) => {
