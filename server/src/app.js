@@ -13,8 +13,7 @@ const cors = require('cors');
 const corsOptions = {
     origin: '*', // Allow all origins
     methods: '*', // Allow all methods
-    credentials: true, // Allow credentials (cookies)
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: '*'
 };
 
 // Constants
