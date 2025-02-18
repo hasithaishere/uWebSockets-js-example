@@ -1,89 +1,58 @@
-const express = require('express');
-const http = require('http');
-const WebSocket = require('ws');
-const cookieParser = require('cookie-parser');
-const cors = require('cors');
+const express = require('express')
+const app = express()
+const http = require('http')
+const server = http.createServer(app)
+const { Server } = require("socket.io")
+const io = new Server(server)
 
-const app = express();
 app.use(express.static('public'))
 
-app.use(express.json()); // Enable JSON parsing for POST requests
-app.use(cookieParser());
-app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK' });
-});
+const port = 3000
+const { v4: uuidv4 } = require("uuid")
 
-// API to send message to a specific WebSocket client
-app.post('/send-message', (req, res) => {
-    const { connectionId, payload } = req.body;
-    if (clients[connectionId]) {
-        clients[connectionId].send(payload);
-        res.status(200).json({ message: 'Message sent successfully' });
-    } else {
-        res.status(404).json({ error: 'Client not found' });
-    }
-});
+// Generate a UUID v4
+const uuid = uuidv4();
+
+const server_info = {
+    server_id: uuid
+}
+
+app.get('/set-cookie', (req, res) => {
+
+    const name = req.query.name
+    const value = req.query.value
+
+    res.cookie(name, value)
+    res.send({
+        "command": "set-cookie",
+        "cookies": {
+            [name]: value
+        }
+    })
+})
+
+app.get('/server-info', (req, res) => {
+    res.send(server_info)
+})
 
 app.get('/', (req, res) => {
     res.sendFile('index.html')
 })
 
-
-let clients = {}; // Store clients based on session ID
-
-// Route to set session cookie
-app.get('/set-cookie', (req, res) => {
-    let sessionId = `session_${Math.random().toString(36).substring(2, 15)}`;
-    res.cookie('CALBCOOK', 'dPvGOsW67OykVEfjTwcZqdD9LF7iipm/0vFT2O280Qq9qa6rIEJDG6vEWPKLczJ3IFMfdmjMudWgdCJhiJ0qJMTV+50pRFQoBfNXF14PCn5vny8pz/rtq77v6Myi');
-    clients = {};
-    clients[sessionId] = null;
-    //res.json({ sessionId });
-    res.send({
-        "command": "set-cookie",
-        "cookies": {
-            ['CALBCOOK']: sessionId
-        }
-    })
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK' });
 });
 
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ noServer: true });
 
-// WebSocket upgrade handler
-server.on('upgrade', (req, socket, head) => {
-    //const cookies = req.headers.cookie;
-    //console.log('cookies>>>', cookies)
-    //const sessionId = cookies ? cookies.split('session_id=')[1]?.split(';')[0] : `session_${Math.random().toString(36).substring(2, 15)}`;
-    //console.log(`Session ID: ${sessionId}`);
-    console.log('clients>>>', clients)
-    wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit('connection', ws, Object.keys(clients)[0]);
-    });
+io.on('connection', (socket) => {
+
+    setTimeout(_ => {
+        socket.emit("server-info", server_info)
+    }, 3000)
+    console.log("new connection", socket.id);
 });
 
-// WebSocket connection handling with pong response
-wss.on('connection', (ws, sessionId) => {
-    console.log(`Client connected with session: ${sessionId}`);
-    clients[sessionId] = ws;
-
-    ws.on('message', (message) => {
-        if (message === 'ping') {
-            console.log(`Received ping from ${sessionId}`);
-            ws.send('pong');
-        } else {
-            console.log(`Received from ${sessionId}: ${message}`);
-            ws.send(`Echo: ${message}`);
-        }
-    });
-
-    ws.on('close', () => {
-        console.log(`Client disconnected: ${sessionId}`);
-        delete clients[sessionId];
-    });
-});
-
-// Server listens on port 3000
-server.listen(3000, () => console.log('WebSocket server running on http://localhost:3000'));
+server.listen(port, () => {
+    console.log(`Example app listening on port ${port}`)
+})

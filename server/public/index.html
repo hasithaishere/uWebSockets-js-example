@@ -1,93 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Client</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io()
+    </script>
 </head>
 
 <body>
-    <h1>WebSocket Client</h1>
-    <button onclick="connectWebSocket()">Connect WebSocket</button>
-    <button onclick="sendMessage()">Send Message</button>
-    <button onclick="sendApiMessage()">Send Message via API</button>
-    <p id="messages"></p>
-
-    <script>
-        let socket;
-
-        // function setCookie(name, value, days) {
-        //     const expires = new Date();
-        //     expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-        //     //document.cookie = `${name}=${value}; path=/; SameSite=None; Secure`;
-        // }
-
-        function getCookie(name) {
-            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            return match ? match[2] : null;
-        }
-
-        async function getSessionId() {
-            const response = await fetch('http://poc--websocket-test-public-alb-1998840662.ap-southeast-1.elb.amazonaws.com/set-cookie', { credentials: 'include' });
-            const data = await response.json();
-            //setCookie('session_id', data.sessionId, 1);
-            //console.log('Session ID:', data.sessionId);
-        }
-
-        async function connectWebSocket() {
-            await getSessionId(); // Ensure session_id is set before connecting
-
-            socket = new WebSocket('ws://poc--websocket-test-public-alb-1998840662.ap-southeast-1.elb.amazonaws.com');
-
-            socket.onopen = () => {
-                console.log('WebSocket Connected');
-                document.getElementById("messages").innerText += "Connected\n";
-                setInterval(() => {
-                    if (socket.readyState === WebSocket.OPEN) {
-                        console.log('Sending ping');
-                        socket.send('ping');
-                    }
-                }, 30000); // Send ping every 30 seconds
-            };
-
-            socket.onmessage = (event) => {
-                if (event.data === 'pong') {
-                    console.log('Received pong from server');
-                } else {
-                    console.log('Message from server:', event.data);
-                    document.getElementById("messages").innerText += `Server: ${event.data}\n`;
-                }
-            };
-
-            socket.onclose = () => {
-                console.log('WebSocket Disconnected');
-                document.getElementById("messages").innerText += "Disconnected\n";
-            };
-        }
-
-        function sendMessage() {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send('Hello Server!');
-            } else {
-                console.log('WebSocket is not connected');
-            }
-        }
-
-        function sendApiMessage() {
-            const connectionId = getCookie('session_id');
-            const payload = 'This is from API';
-            fetch('http://poc--websocket-test-public-alb-1998840662.ap-southeast-1.elb.amazonaws.com/send-message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ connectionId, payload })
-            })
-            .then(response => response.json())
-            .then(data => alert(`Response: ${JSON.stringify(data)}`))
-            .catch(error => alert(`Error: ${error}`));
-        }
-    </script>
+<h1>Hi</h1>
 </body>
 
 </html>
