@@ -1,4 +1,3 @@
-// File: server.js
 const WebSocket = require('ws');
 const http = require('http');
 const express = require('express');
@@ -15,6 +14,9 @@ app.use(cors({
   credentials: true
 }));
 
+// Add body parser middleware for JSON
+app.use(express.json());
+
 // Create HTTP server
 const server = http.createServer(app);
 
@@ -30,6 +32,49 @@ app.get('/health', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.status(200).json(healthStatus);
+});
+
+// New endpoint to send message to specific client
+app.post('/send-message', (req, res) => {
+  try {
+    const { sessionId, message, type = 'message' } = req.body;
+
+    if (!sessionId || !message) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'sessionId and message are required'
+      });
+    }
+
+    // Find the connection for the given session ID
+    const ws = connections.get(sessionId);
+    
+    if (!ws) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'No active connection found for the given session ID'
+      });
+    }
+
+    // Send the message to the specific client
+    ws.send(JSON.stringify({
+      type,
+      message,
+      timestamp: new Date().toISOString()
+    }));
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Message sent successfully'
+    });
+
+  } catch (error) {
+    console.error('Error sending message:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
+  }
 });
 
 // Create WebSocket server
