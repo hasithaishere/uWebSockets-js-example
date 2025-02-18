@@ -12,6 +12,8 @@ const PORT = 3000;
 const CALB_COOKIE = 'CALBCOOK';
 const EC2_METADATA_URL = 'http://169.254.169.254/latest/meta-data/local-ipv4';
 
+const instanceHash = uuidv4();
+
 // Function to get Machine IP from EC2 Metadata
 async function getMachineIP() {
     try {
@@ -75,11 +77,19 @@ app.get('/set-cookie', (req, res) => {
     // res.cookie(CALB_COOKIE, sessionValue);
     // res.json({ message: 'Session cookie set', sessionValue });
 
-    res.cookie(CALB_COOKIE, sessionValue);
+    // res.cookie(CALB_COOKIE, sessionValue);
+    // res.send({
+    //     "command": "set-cookie",
+    //     "cookies": {
+    //         [CALB_COOKIE]: sessionValue
+    //     }
+    // })
+    
+    res.cookie(CALB_COOKIE, instanceHash);
     res.send({
         "command": "set-cookie",
         "cookies": {
-            [CALB_COOKIE]: sessionValue
+            [CALB_COOKIE]: instanceHash
         }
     })
 });
@@ -91,6 +101,11 @@ server.on('upgrade', (req, socket, head) => {
         connections[connectionId] = ws;
         wss.emit('connection', ws, connectionId);
     });
+});
+
+wss.on("headers", function(headers) {
+    headers["set-cookie"] = CALB_COOKIE + "=" + instanceHash;
+    console.log("handshake response cookie", headers["set-cookie"]);
 });
 
 // WebSocket Connection Handling with Ping-Pong
