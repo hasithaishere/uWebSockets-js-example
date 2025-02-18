@@ -40,10 +40,16 @@
         }
 
         async function connectWebSocket() {
-            await setSession();
+            const { sessionValue } = await setSession();
+
+            console.log('Session Value:: ', sessionValue);
 
             setTimeout(() => {
-                socket = new WebSocket(`ws://${window.location.host}`);
+                socket = new WebSocket(`ws://${window.location.host}`, {
+                    headers: {
+                        'Cookie': 'AWSALB=' + sessionValue  // Must be manually managed
+                    }
+                });
 
                 socket.onopen = () => {
                     logMessage('WebSocket Connected');
