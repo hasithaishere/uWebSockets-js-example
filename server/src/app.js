@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
+const cookie = require("cookie");
 
 // Constants
 const PORT = 3000;
@@ -105,7 +106,7 @@ server.on('upgrade', (req, socket, head) => {
 
 wss.on("headers", function(headers) {
     //headers["set-cookie"] = CALB_COOKIE + "=" + instanceHash;
-    headers.push('Set-Cookie: ' + cookieParser.serialize(CALB_COOKIE, instanceHash));
+    headers.push('Set-Cookie: ' + cookie.serialize(CALB_COOKIE, instanceHash));
     console.log("handshake response cookie", headers);
 });
 
