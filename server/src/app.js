@@ -152,15 +152,15 @@ wss.on('connection', (ws, req) => {
 });
 
 // Periodic cleanup of dead connections
-setInterval(() => {
-  wss.clients.forEach((ws) => {
-    if (!ws.isAlive) {
-      return ws.terminate();
-    }
-    ws.isAlive = false;
-    ws.ping();
-  });
-}, 30000);
+// setInterval(() => {
+//   wss.clients.forEach((ws) => {
+//     if (!ws.isAlive) {
+//       return ws.terminate();
+//     }
+//     ws.isAlive = false;
+//     ws.ping();
+//   });
+// }, 30000);
 
 // Start server
 const PORT = process.env.PORT || 3000;
