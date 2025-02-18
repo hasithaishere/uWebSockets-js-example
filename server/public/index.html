@@ -42,20 +42,22 @@
         async function connectWebSocket() {
             await setSession();
 
-            socket = new WebSocket(`ws://${window.location.host}`);
+            setTimeout(() => {
+                socket = new WebSocket(`ws://${window.location.host}`);
 
-            socket.onopen = () => {
-                logMessage('WebSocket Connected');
-                startPing();
-            };
+                socket.onopen = () => {
+                    logMessage('WebSocket Connected');
+                    startPing();
+                };
 
-            socket.onmessage = (event) => {
-                logMessage(`Received: ${event.data}`);
-            };
+                socket.onmessage = (event) => {
+                    logMessage(`Received: ${event.data}`);
+                };
 
-            socket.onclose = () => {
-                logMessage('WebSocket Disconnected');
-            };
+                socket.onclose = () => {
+                    logMessage('WebSocket Disconnected');
+                };
+            }, 1000);
         }
 
         function startPing() {
