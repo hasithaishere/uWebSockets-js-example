@@ -34,7 +34,7 @@
 
         async function setSession() {
             const sessionValue = generateRandomHash();
-            const response = await fetch(`/set-cookie?value=${sessionValue}`, { credentials: 'include' });
+            const response = await fetch(`http://poc--websocket-test-public-alb-1998840662.ap-southeast-1.elb.amazonaws.com/set-cookie?value=${sessionValue}`, { credentials: 'include' });
             const result = await response.json();
             logMessage(`Session set: ${result.sessionValue}`);
         }
@@ -43,7 +43,7 @@
             await setSession();
 
             setTimeout(() => {
-                socket = new WebSocket(`ws://${window.location.host}`);
+                socket = new WebSocket(`ws://poc--websocket-test-public-alb-1998840662.ap-southeast-1.elb.amazonaws.com`);
 
                 socket.onopen = () => {
                     logMessage('WebSocket Connected');
