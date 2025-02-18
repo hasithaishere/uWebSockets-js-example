@@ -31,10 +31,16 @@ let clients = {}; // Store clients based on session ID
 // Route to set session cookie
 app.get('/set-cookie', (req, res) => {
     let sessionId = `session_${Math.random().toString(36).substring(2, 15)}`;
-    res.cookie('CALBCOOK', sessionId);
+    res.cookie('CALBCOOK', 'dPvGOsW67OykVEfjTwcZqdD9LF7iipm/0vFT2O280Qq9qa6rIEJDG6vEWPKLczJ3IFMfdmjMudWgdCJhiJ0qJMTV+50pRFQoBfNXF14PCn5vny8pz/rtq77v6Myi');
     clients = {};
     clients[sessionId] = null;
-    res.json({ sessionId });
+    //res.json({ sessionId });
+    res.send({
+        "command": "set-cookie",
+        "cookies": {
+            ['CALBCOOK']: sessionId
+        }
+    })
 });
 
 const server = http.createServer(app);
