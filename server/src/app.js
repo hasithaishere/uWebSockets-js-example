@@ -50,7 +50,18 @@ let connections = {};
 
 // Health Check Endpoint
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+    res.status(200).json({ status: 'ok', machineIP });
+});
+
+// API to Send Message to Specific WebSocket Client
+app.post('/socket/send-message', (req, res) => {
+    const { connectionId, payload } = req.body;
+    if (connections[connectionId]) {
+        connections[connectionId].send(JSON.stringify({ type: 'message', payload }));
+        res.status(200).json({ status: 'sent', connectionId });
+    } else {
+        res.status(404).json({ error: 'Connection not found' });
+    }
 });
 
 // Set Session Cookie from Path Variable
