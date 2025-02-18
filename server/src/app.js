@@ -15,8 +15,13 @@ const EC2_METADATA_URL = 'http://169.254.169.254/latest/meta-data/local-ipv4';
 // Function to get Machine IP from EC2 Metadata
 async function getMachineIP() {
     try {
-        const response = await axios.get(EC2_METADATA_URL);
-        return response.data;
+        const tokenResponse = await axios.put('http://169.254.169.254/latest/api/token', null, {
+            headers: { 'X-aws-ec2-metadata-token-ttl-seconds': '21600' }
+        });
+        const metadataResponse = await axios.get(EC2_METADATA_URL, {
+            headers: { 'X-aws-ec2-metadata-token': tokenResponse.data }
+        });
+        return metadataResponse.data;
     } catch (error) {
         console.error('Failed to fetch EC2 Metadata:', error);
         return 'Unknown';
