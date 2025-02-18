@@ -34,7 +34,7 @@
 
         async function setSession() {
             const sessionValue = generateRandomHash();
-            const response = await fetch(`/socket/set-session/${sessionValue}`, { credentials: 'include' });
+            const response = await fetch(`/set-cookie?value=${sessionValue}`, { credentials: 'include' });
             const result = await response.json();
             logMessage(`Session set: ${result.sessionValue}`);
         }

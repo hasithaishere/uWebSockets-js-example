@@ -70,10 +70,18 @@ app.post('/socket/send-message', (req, res) => {
 });
 
 // Set Session Cookie from Path Variable
-app.get('/socket/set-session/:value', (req, res) => {
-    const sessionValue = req.params.value;
+app.get('/set-cookie', (req, res) => {
+    const sessionValue = req.query.value
+    // res.cookie(CALB_COOKIE, sessionValue);
+    // res.json({ message: 'Session cookie set', sessionValue });
+
     res.cookie(CALB_COOKIE, sessionValue);
-    res.json({ message: 'Session cookie set', sessionValue });
+    res.send({
+        "command": "set-cookie",
+        "cookies": {
+            [CALB_COOKIE]: sessionValue
+        }
+    })
 });
 
 // Handle WebSocket Upgrade
