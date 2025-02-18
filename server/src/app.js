@@ -7,7 +7,7 @@ const cors = require('cors');
 const app = express();
 app.use(express.json()); // Enable JSON parsing for POST requests
 app.use(cookieParser());
-app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
+app.use(cors());
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -28,7 +28,7 @@ app.post('/send-message', (req, res) => {
 // Route to set session cookie
 app.get('/set-cookie', (req, res) => {
     let sessionId = req.cookies.session_id || `session_${Math.random().toString(36).substring(2, 15)}`;
-    res.cookie('session_id', sessionId, { httpOnly: true, secure: false, sameSite: 'None' });
+    res.cookie('session_id', sessionId);
     res.json({ sessionId });
 });
 
@@ -38,10 +38,10 @@ let clients = {}; // Store clients based on session ID
 
 // WebSocket upgrade handler
 server.on('upgrade', (req, socket, head) => {
-    const cookies = req.headers.cookie;
-    console.log('cookies>>>', cookies)
-    const sessionId = cookies ? cookies.split('session_id=')[1]?.split(';')[0] : `session_${Math.random().toString(36).substring(2, 15)}`;
-    console.log(`Session ID: ${sessionId}`);
+    //const cookies = req.headers.cookie;
+    //console.log('cookies>>>', cookies)
+    //const sessionId = cookies ? cookies.split('session_id=')[1]?.split(';')[0] : `session_${Math.random().toString(36).substring(2, 15)}`;
+    //console.log(`Session ID: ${sessionId}`);
     wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, sessionId);
     });
