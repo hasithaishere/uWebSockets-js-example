@@ -72,7 +72,7 @@ app.post('/socket/send-message', (req, res) => {
 // Set Session Cookie from Path Variable
 app.get('/socket/set-session/:value', (req, res) => {
     const sessionValue = req.params.value;
-    res.cookie(CALB_COOKIE, sessionValue, { httpOnly: true, sameSite: 'None', secure: false });
+    res.cookie(CALB_COOKIE, sessionValue);
     res.json({ message: 'Session cookie set', sessionValue });
 });
 
