@@ -1,3 +1,4 @@
+// File: server.js
 const WebSocket = require('ws');
 const http = require('http');
 const express = require('express');
@@ -115,12 +116,10 @@ wss.on('connection', (ws, req) => {
           }
         }
 
-        // Handle ping message
-        if (data.type === 'ping') {
-          ws.send(JSON.stringify({
-            type: 'pong',
-            timestamp: new Date().toISOString()
-          }));
+        // Handle disconnect request
+        if (data.type === 'disconnect') {
+          console.log(`Client requested disconnect: ${ws.stickySession}`);
+          ws.close();
         }
 
       } catch (error) {
@@ -150,17 +149,6 @@ wss.on('connection', (ws, req) => {
     ws.close();
   }
 });
-
-// Periodic cleanup of dead connections
-// setInterval(() => {
-//   wss.clients.forEach((ws) => {
-//     if (!ws.isAlive) {
-//       return ws.terminate();
-//     }
-//     ws.isAlive = false;
-//     ws.ping();
-//   });
-// }, 30000);
 
 // Start server
 const PORT = process.env.PORT || 3000;
