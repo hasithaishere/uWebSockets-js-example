@@ -122,6 +122,8 @@ wss.on('connection', (ws, req) => {
   try {
     // Associate WebSocket connection with sticky session
     ws.stickySession = req.stickySession;
+
+    console.log('Request headers:', req.stickySession);
     
     // Store connection
     connections.set(ws.stickySession, ws);
