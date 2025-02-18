@@ -23,10 +23,10 @@
         //     //document.cookie = `${name}=${value}; path=/; SameSite=None; Secure`;
         // }
 
-        // function getCookie(name) {
-        //     const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-        //     return match ? match[2] : null;
-        // }
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            return match ? match[2] : null;
+        }
 
         async function getSessionId() {
             const response = await fetch('http://poc--websocket-test-public-alb-1998840662.ap-southeast-1.elb.amazonaws.com/set-cookie', { credentials: 'include' });
