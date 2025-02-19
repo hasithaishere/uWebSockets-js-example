@@ -84,7 +84,7 @@ io.on('connection', (socket) => {
     socket.emit('connection-established', { connectionId })
 
     setTimeout(_ => {
-        socket.emit("server-info", server_info)
+        socket.emit("server-info", { ...server_info, connectionId})
     }, 3000)
     console.log("new connection", socket.id);
 
