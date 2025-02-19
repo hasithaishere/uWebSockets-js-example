@@ -16,27 +16,29 @@ class SocketServer {
             config.corsOrigin
         ].filter(Boolean);
 
-        this.io = new Server(this.httpServer, {
-            cors: {
-                origin: (origin, callback) => {
-                    // Allow requests with no origin (like mobile apps or curl requests)
-                    if (!origin) return callback(null, true);
+        // this.io = new Server(this.httpServer, {
+        //     cors: {
+        //         origin: (origin, callback) => {
+        //             // Allow requests with no origin (like mobile apps or curl requests)
+        //             if (!origin) return callback(null, true);
 
-                    if (allowedOrigins.indexOf(origin) !== -1) {
-                        callback(null, true);
-                    } else {
-                        console.warn(`Origin ${origin} not allowed by CORS`);
-                        callback(null, true); // Allow all origins in development
-                        // In production you might want to restrict: callback(new Error('Not allowed by CORS'))
-                    }
-                },
-                methods: ["GET", "POST"],
-                credentials: true,
-                allowedHeaders: ["Content-Type", "Authorization"]
-            },
-            pingTimeout: 60000,
-            pingInterval: 25000
-        });
+        //             if (allowedOrigins.indexOf(origin) !== -1) {
+        //                 callback(null, true);
+        //             } else {
+        //                 console.warn(`Origin ${origin} not allowed by CORS`);
+        //                 callback(null, true); // Allow all origins in development
+        //                 // In production you might want to restrict: callback(new Error('Not allowed by CORS'))
+        //             }
+        //         },
+        //         methods: ["GET", "POST"],
+        //         credentials: true,
+        //         allowedHeaders: ["Content-Type", "Authorization"]
+        //     },
+        //     pingTimeout: 60000,
+        //     pingInterval: 25000
+        // });
+        
+        this.io = new Server(this.httpServer);
 
         this.JWT_SECRET = config.jwtSecret || 'your-jwt-secret';
         this.setupExpress();
