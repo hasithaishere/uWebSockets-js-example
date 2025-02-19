@@ -43,6 +43,12 @@ module.exports = function (socketServer) {
     res.status(200).json({ status: 'ok' });
   });
 
+  router.get('/set-cookie', (req, res) => {
+    const sessionValue = req.query.value
+    res.cookie(CALB_COOKIE, sessionValue);
+    res.json({ message: 'Session cookie set', sessionValue });
+  });
+
   router.post('/send-message', authenticateToken, validateMessage, async (req, res) => {
     try {
       const { channel, name, data } = req.body;
