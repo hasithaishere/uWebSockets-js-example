@@ -98,7 +98,11 @@ app.get('/set-cookie', (req, res) => {
 // Handle WebSocket Upgrade
 server.on('upgrade', (req, socket, head) => {
     wss.handleUpgrade(req, socket, head, (ws) => {
-        console.log('Req ...', Object.keys(req));
+        console.log('Req ...', req);
+        console.log('--------------------------');
+        console.log('Req Headers ...', req.rawHeaders);
+        console.log('Req Headers ...', req.headers);
+        console.log('--------------------------');
         //req.headers['set-cookie'] = cookie.serialize(CALB_COOKIE, instanceHash);
         const connectionId = `conn_${uuidv4()}`;
         connections[connectionId] = ws;
