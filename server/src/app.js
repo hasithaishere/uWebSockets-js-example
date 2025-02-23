@@ -41,8 +41,31 @@ getMachineIP().then(ip => {
 
 const app = express();
 
-app.options('*', cors())
-app.use(cors())
+// Configure CORS properly
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Add your allowed origins here
+        const allowedOrigins = [
+            'http://127.0.0.1:8080',
+            'http://localhost:8080',
+            // Add your production domains here
+        ];
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    credentials: true
+};
+
+app.use(cors(corsOptions));
 
 // Body Parser Middleware
 app.use(express.json());
