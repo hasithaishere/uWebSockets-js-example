@@ -99,7 +99,9 @@ app.get('/set-cookie', (req, res) => {
 server.on('upgrade', (req, socket, head) => {
     wss.handleUpgrade(req, socket, head, (ws) => {
         console.log('--------------------------');
-        console.log('Req Headers ...', cookie.parse(req.headers.cookie));
+        const cookieMap = cookie.parse(req.headers.cookie);
+        console.log('Req Headers ...', cookieMap);
+        console.log('Req Headers ...', Object.keys(cookieMap));
         console.log('--------------------------');
         //req.headers['set-cookie'] = cookie.serialize(CALB_COOKIE, instanceHash);
         const connectionId = `conn_${uuidv4()}`;
