@@ -7,6 +7,7 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
 const cookie = require("cookie");
+const cors = require('cors')
 
 // Constants
 const PORT = 3000;
@@ -39,6 +40,8 @@ getMachineIP().then(ip => {
 });
 
 const app = express();
+
+app.use(cors())
 
 // Body Parser Middleware
 app.use(express.json());
@@ -75,12 +78,6 @@ app.post('/socket/send-message', (req, res) => {
 // Set Session Cookie from Path Variable
 app.get('/set-cookie', (req, res) => {
     const sessionValue = req.query.value;
-    
-    // Add CORS headers
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    res.header('Access-Control-Allow-Credentials', 'true');
     
     res.cookie(CALB_COOKIE, instanceHash);
     res.send({
