@@ -73,27 +73,27 @@ app.post('/socket/send-message', (req, res) => {
 });
 
 // Set Session Cookie from Path Variable
-app.get('/set-cookie', (req, res) => {
-    const sessionValue = req.query.value
-    // res.cookie(CALB_COOKIE, sessionValue);
-    // res.json({ message: 'Session cookie set', sessionValue });
+// app.get('/set-cookie', (req, res) => {
+//     const sessionValue = req.query.value
+//     // res.cookie(CALB_COOKIE, sessionValue);
+//     // res.json({ message: 'Session cookie set', sessionValue });
 
-    // res.cookie(CALB_COOKIE, sessionValue);
-    // res.send({
-    //     "command": "set-cookie",
-    //     "cookies": {
-    //         [CALB_COOKIE]: sessionValue
-    //     }
-    // })
+//     // res.cookie(CALB_COOKIE, sessionValue);
+//     // res.send({
+//     //     "command": "set-cookie",
+//     //     "cookies": {
+//     //         [CALB_COOKIE]: sessionValue
+//     //     }
+//     // })
     
-    res.cookie(CALB_COOKIE, instanceHash);
-    res.send({
-        "command": "set-cookie",
-        "cookies": {
-            [CALB_COOKIE]: instanceHash
-        }
-    })
-});
+//     res.cookie(CALB_COOKIE, instanceHash);
+//     res.send({
+//         "command": "set-cookie",
+//         "cookies": {
+//             [CALB_COOKIE]: instanceHash
+//         }
+//     })
+// });
 
 // Handle WebSocket Upgrade
 server.on('upgrade', (req, socket, head) => {
@@ -110,19 +110,20 @@ server.on('upgrade', (req, socket, head) => {
     });
 });
 
-wss.on("headers", function(headers) {
-    //headers["set-cookie"] = CALB_COOKIE + "=" + instanceHash;
-   // headers.push('Set-Cookie: ' + cookie.serialize(CALB_COOKIE, instanceHash));
-    console.log("handshake response cookie", headers);
-});
+// wss.on("headers", function(headers) {
+//     //headers["set-cookie"] = CALB_COOKIE + "=" + instanceHash;
+//    // headers.push('Set-Cookie: ' + cookie.serialize(CALB_COOKIE, instanceHash));
+//     console.log("handshake response cookie", headers);
+// });
 
 // WebSocket Connection Handling with Ping-Pong
 wss.on('connection', (ws, { connectionId, sessionId }) => {
-    console.log(`Client connected: ${connectionId} ->  ${sessionId}`);
+    console.log(`Client connected: ${connectionId} -> ${sessionId}`);
     ws.send(JSON.stringify({ type: 'ack', connectionId, serverIP: machineIP }));
 
     ws.on('message', (message) => {
         console.log(`Received from ${connectionId}: ${message}`);
+        console.log('--------------------------', message === 'ping');
         if (message === 'ping') {
             ws.send('pong');
         } else {
