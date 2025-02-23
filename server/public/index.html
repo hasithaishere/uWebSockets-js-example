@@ -28,21 +28,58 @@
     <script>
         let socket;
 
+        function generateRandomHash() {
+            return Array.from({ length: 32 }, () => Math.random().toString(36).charAt(2)).join('');
+        }
+
+        async function setSession() {
+            const sessionValue = generateRandomHash();
+            const response = await fetch(`http://poc--websocket-test-public-alb-1998840662.ap-southeast-1.elb.amazonaws.com/set-cookie?value=${sessionValue}`, { credentials: 'include' });
+            const result = await response.json();
+            logMessage(`Session set: ${result.sessionValue}`);
+            // Log cookies from response
+            const cookies = response.headers.get('set-cookie');
+            if (cookies) {
+                logMessage(`Response cookies: ${cookies}`);
+            }
+
+            // Get and log specific cookies
+            const allCookies = document.cookie;
+            const cookieObj = allCookies.split(';').reduce((obj, cookie) => {
+                const [key, value] = cookie.trim().split('=');
+                obj[key] = value;
+                return obj;
+            }, {});
+
+            if (cookieObj['CALBCOOK']) {
+                logMessage(`CALBCOOK: ${cookieObj['CALBCOOK']}`);
+            }
+            if (cookieObj['AWSALBAPP-0']) {
+                logMessage(`AWSALBAPP-0: ${cookieObj['AWSALBAPP-0']}`); 
+            }
+
+            console.log('All cookies:', document.cookie);
+        }
+
         async function connectWebSocket() {
-            socket = new WebSocket(`ws://poc--websocket-test-public-alb-1998840662.ap-southeast-1.elb.amazonaws.com`);
+            await setSession();
 
-            socket.onopen = () => {
-                logMessage('WebSocket Connected');
-                startPing();
-            };
+            setTimeout(() => {
+                socket = new WebSocket(`ws://poc--websocket-test-public-alb-1998840662.ap-southeast-1.elb.amazonaws.com`);
 
-            socket.onmessage = (event) => {
-                logMessage(`Received: ${event.data}`);
-            };
+                socket.onopen = () => {
+                    logMessage('WebSocket Connected');
+                    startPing();
+                };
 
-            socket.onclose = () => {
-                logMessage('WebSocket Disconnected');
-            };
+                socket.onmessage = (event) => {
+                    logMessage(`Received: ${event.data}`);
+                };
+
+                socket.onclose = () => {
+                    logMessage('WebSocket Disconnected');
+                };
+            }, 1000);
         }
 
         function startPing() {
