@@ -74,25 +74,21 @@ app.post('/socket/send-message', (req, res) => {
 
 // Set Session Cookie from Path Variable
 app.get('/set-cookie', (req, res) => {
-    const sessionValue = req.query.value
-    // res.cookie(CALB_COOKIE, sessionValue);
-    // res.json({ message: 'Session cookie set', sessionValue });
-
-    // res.cookie(CALB_COOKIE, sessionValue);
-    // res.send({
-    //     "command": "set-cookie",
-    //     "cookies": {
-    //         [CALB_COOKIE]: sessionValue
-    //     }
-    // })
+    const sessionValue = req.query.value;
+    
+    // Add CORS headers
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Credentials', 'true');
     
     res.cookie(CALB_COOKIE, instanceHash);
     res.send({
-        "command": "set-cookie",
+        "command": "set-cookie", 
         "cookies": {
             [CALB_COOKIE]: instanceHash
         }
-    })
+    });
 });
 
 // Handle WebSocket Upgrade
