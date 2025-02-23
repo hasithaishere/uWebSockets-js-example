@@ -100,13 +100,13 @@ server.on('upgrade', (req, socket, head) => {
     wss.handleUpgrade(req, socket, head, (ws) => {
         console.log('--------------------------');
         const cookieMap = cookie.parse(req.headers.cookie);
-        console.log('Req Headers ...', cookieMap);
-        console.log('Req Headers ...', cookieMap.AWSALB);
+        const sessionId = cookieMap.AWSALB;
+        console.log('Req Headers ...', sessionId);
         console.log('--------------------------');
         //req.headers['set-cookie'] = cookie.serialize(CALB_COOKIE, instanceHash);
         const connectionId = `conn_${uuidv4()}`;
         connections[connectionId] = ws;
-        wss.emit('connection', ws, connectionId);
+        wss.emit('connection', ws, { connectionId, sessionId });
     });
 });
 
@@ -117,8 +117,8 @@ wss.on("headers", function(headers) {
 });
 
 // WebSocket Connection Handling with Ping-Pong
-wss.on('connection', (ws, connectionId) => {
-    console.log(`Client connected: ${connectionId}`);
+wss.on('connection', (ws, { connectionId, sessionId }) => {
+    console.log(`Client connected: ${connectionId} ->  ${sessionId}`);
     ws.send(JSON.stringify({ type: 'ack', connectionId, serverIP: machineIP }));
 
     ws.on('message', (message) => {
