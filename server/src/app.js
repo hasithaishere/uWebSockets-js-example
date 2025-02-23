@@ -98,7 +98,8 @@ app.get('/set-cookie', (req, res) => {
 // Handle WebSocket Upgrade
 server.on('upgrade', (req, socket, head) => {
     wss.handleUpgrade(req, socket, head, (ws) => {
-        req.headers['set-cookie'] = cookie.serialize(CALB_COOKIE, instanceHash);
+        console.log('Req ...', req, socket, head);
+        //req.headers['set-cookie'] = cookie.serialize(CALB_COOKIE, instanceHash);
         const connectionId = `conn_${uuidv4()}`;
         connections[connectionId] = ws;
         wss.emit('connection', ws, connectionId);
@@ -107,7 +108,7 @@ server.on('upgrade', (req, socket, head) => {
 
 wss.on("headers", function(headers) {
     //headers["set-cookie"] = CALB_COOKIE + "=" + instanceHash;
-    headers.push('Set-Cookie: ' + cookie.serialize(CALB_COOKIE, instanceHash));
+   // headers.push('Set-Cookie: ' + cookie.serialize(CALB_COOKIE, instanceHash));
     console.log("handshake response cookie", headers);
 });
 
@@ -115,8 +116,6 @@ wss.on("headers", function(headers) {
 wss.on('connection', (ws, connectionId) => {
     console.log(`Client connected: ${connectionId}`);
     ws.send(JSON.stringify({ type: 'ack', connectionId, serverIP: machineIP }));
-
-
 
     ws.on('message', (message) => {
         console.log(`Received from ${connectionId}: ${message}`);
