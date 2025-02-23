@@ -116,6 +116,8 @@ app.get('/set-cookie', (req, res) => {
 server.on('upgrade', (req, socket, head) => {
     wss.handleUpgrade(req, socket, head, (ws) => {
         console.log('--------------------------');
+        console.log('Req Headers ...', req);
+        console.log('Req Headers ...', req.headers);
         const cookieMap = cookie.parse(req.headers.cookie);
         const sessionId = cookieMap.AWSALB;
         console.log('Req Headers ...', sessionId);
