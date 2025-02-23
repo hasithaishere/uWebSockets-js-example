@@ -41,6 +41,7 @@ getMachineIP().then(ip => {
 
 const app = express();
 
+app.options('*', cors())
 app.use(cors())
 
 // Body Parser Middleware
