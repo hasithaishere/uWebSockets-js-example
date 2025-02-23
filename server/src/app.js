@@ -101,7 +101,7 @@ server.on('upgrade', (req, socket, head) => {
         console.log('--------------------------');
         const cookieMap = cookie.parse(req.headers.cookie);
         console.log('Req Headers ...', cookieMap);
-        console.log('Req Headers ...', Object.keys(cookieMap));
+        console.log('Req Headers ...', cookieMap.AWSALB);
         console.log('--------------------------');
         //req.headers['set-cookie'] = cookie.serialize(CALB_COOKIE, instanceHash);
         const connectionId = `conn_${uuidv4()}`;
